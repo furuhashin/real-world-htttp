@@ -22,7 +22,7 @@ func handlerHtml(w http.ResponseWriter, r *http.Request) {
 		pusher.Push("/image", nil)
 	}
 	w.Header().Add("Content-Type", "text/html")
-	fmt.Fprintf(w, `<html><body><img src="/image"></html></body>`)
+	fmt.Fprintf(w, `<html><body><img src="/image"></body></html>`)
 }
 
 func handlerImage(w http.ResponseWriter, r *http.Request) {
