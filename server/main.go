@@ -12,11 +12,7 @@ var html []byte
 
 func handlerHtml(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/html")
-<<<<<<< Updated upstream
-	fmt.Fprintf(w, `<html><body><img src="/image"></body></html>`)
-=======
 	w.Write(html)
->>>>>>> Stashed changes
 }
 
 func handlerPrimeSSE(w http.ResponseWriter, r *http.Request) {
