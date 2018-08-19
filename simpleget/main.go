@@ -1,24 +1,40 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"io/ioutil"
 	"log"
-	"net/rpc/jsonrpc"
+	"net/http"
+	"net/http/httputil"
 )
 
-type Args struct {
-	A, B int
-}
-
 func main() {
-	client, err := jsonrpc.Dial("tcp", "localhost:18888")
+	cert, err := ioutil.ReadFile("../server/ca/ca.crt")
 	if err != nil {
 		panic(err)
 	}
-	var result int
-	args := &Args{4, 5}
-	err = client.Call("Calculator.Multiply", args, &result)
+	certPool := x509.NewCertPool()
+	certPool.AppendCertsFromPEM(cert)
+	tlsConfig := &tls.Config{
+		RootCAs: certPool,
+	}
+	tlsConfig.BuildNameToCertificate()
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfig,
+		},
+	}
+
+	resp, err := client.Get("https://localhost:18443")
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("4 * 5 = %d\n", result)
+	defer resp.Body.Close()
+	dump, err := httputil.DumpResponse(resp, true)
+	if err != nil {
+		panic(err)
+	}
+	log.Println(string(dump))
 }
