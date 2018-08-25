@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/skratchdot/open-golang/open"
 
@@ -40,6 +41,10 @@ func main() {
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "text/html")
 				io.WriteString(w, "<html><script>window.open('about:blank','_self').close()</script></html>")
+				//response がflush()を実装している　= response はFlusherのインターフェイスを実装しているのでFlusher型
+				//また、responseは ResponseWriterのインターフェイスを実装しているのでResponseWriter型でもある。
+				//なので型アサーションが成功し、Flusherを取得することができる
+				//wの実態は多分response型
 				w.(http.Flusher).Flush()
 				code <- r.URL.Query().Get("code")
 				server.Shutdown(context.Background())
@@ -77,4 +82,34 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(string(emails))
+
+	gist := `{
+		"description": "API example",
+		"public": true,
+		"files": {
+			"hello_from_rest_api.txt": {
+				"content": "Hello Wprld"
+			}
+		}
+	}`
+
+	resp2, err := client.Post("https://api.github.com/gists", "application/json", strings.NewReader(gist))
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(resp2.Status)
+	defer resp2.Body.Close()
+
+	//メタ情報を付与している
+	type GistResult struct {
+		Url string `json:"html_url"`
+	}
+	gistResult := &GistResult{}
+	err = json.NewDecoder(resp2.Body).Decode(&gistResult)
+	if err != nil {
+		panic(err)
+	}
+	if gistResult.Url != "" {
+		open.Start(gistResult.Url)
+	}
 }
